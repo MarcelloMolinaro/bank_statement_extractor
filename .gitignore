@@ -1,0 +1,35 @@
+# Python virtual environment
+.venv/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Project specific
+# Ignore PDF files but keep directory structure
+statements/*.pdf
+statements/**/*.pdf
+
+# Keep the statements directory and .gitkeep file
+!statements/
+!statements/.gitkeep
+
+# Ignore generated CSV files but keep output directory structure
+output/*.csv
+output/**/*.csv
+
+# Keep the output directory
+!output/
