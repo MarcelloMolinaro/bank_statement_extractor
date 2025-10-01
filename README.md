@@ -83,7 +83,7 @@ python src/extract.py
 ### CSV Format
 | Date | Account | Description | Check # | Category | Credit | Debit | Account Name |
 |------|---------|-------------|---------|----------|--------|-------|--------------|
-| 12/15/2022 | Student Checking | PREAUTHORIZED CREDIT MOZART DATA... | | Income/Salary | 2509.75 | | M_wintrust |
+| 12/25/2024 | Senior Checking | PREAUTHORIZED CREDIT WEEBO INDUSTRIES | | Income/Salary | 25000 | | BANK_OF_AMERICA |
 
 ## Supported PDF Formats
 
