@@ -4,31 +4,15 @@ from pytesseract import Output
 import cv2
 import numpy as np
 import pandas as pd
-import os
-import yaml
-import csv
-import re
-from datetime import datetime
+from extract_utils import get_config, categorize, save_csv, sort_transactions_by_date, get_pdf_files, extract_year_from_filename, format_date_with_year
 
-# Load configuration
-with open(os.path.join(os.path.dirname(__file__), '..', 'config.yml'), 'r') as f:
-    config = yaml.safe_load(f)
-
-def extract_year_from_filename(filename):
-    """Extract year from filename like '3_29_2024_amalgamated.pdf'."""
-    match = re.search(r'(\d{4})', filename)
-    return int(match.group(1)) if match else datetime.now().year
-
-def categorize(desc):
-    """Categorize transaction based on description."""
-    d = desc.upper()
-    for keyword in config['categories']:
-        if keyword in d:
-            return config['categories'][keyword]
-    return ""
+# Removed - now using shared functions from utils
 
 def process_page_with_ocr(page, page_num, statement_year):
     """Process a single page with OCR and return transactions."""
+    config = get_config()
+    ocr_config = config['ocr']
+    
     # Skip page 2 (legal text/disclaimers)
     if page_num == 2:
         return []
@@ -48,7 +32,7 @@ def process_page_with_ocr(page, page_num, statement_year):
             return []  # Skip this page - no transaction data
     
     # Render PDF page as image
-    pix = page.get_pixmap(dpi=300)
+    pix = page.get_pixmap(dpi=ocr_config['dpi'])
     img_data = pix.tobytes("ppm")
     img = cv2.imdecode(np.frombuffer(img_data, np.uint8), cv2.IMREAD_COLOR)
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -59,9 +43,9 @@ def process_page_with_ocr(page, page_num, statement_year):
 
     # Group words by y-coordinate (rows)
     rows = {}
-    tolerance = 5
-    y_start = 1955 if page_num == 1 else 640
-    y_end = 2500 if page_num == 1 else 1050
+    tolerance = ocr_config['row_tolerance']
+    y_start = ocr_config['page_1_y_start'] if page_num == 1 else ocr_config['page_3_y_start']
+    y_end = ocr_config['page_1_y_end'] if page_num == 1 else ocr_config['page_3_y_end']
 
     for i, word in enumerate(ocr_data['text']):
         if not word.strip():
@@ -82,13 +66,8 @@ def process_page_with_ocr(page, page_num, statement_year):
             rows[row_key] = []
         rows[row_key].append({'text': word, 'x': x})
 
-    # Assign words to columns
-    x_ranges = {
-        'Date': (135, 296),
-        'Description': (296, 1643),
-        'Credit': (1643, 2052),
-        'Debit': (2052, 2470)
-    }
+    # Assign words to columns using config
+    x_ranges = {col: tuple(coords) for col, coords in ocr_config['x_ranges'].items()}
     
     data = []
     for y in sorted(rows):
@@ -148,9 +127,7 @@ def process_page_with_ocr(page, page_num, statement_year):
 
 def process_pdf_with_ocr(single_pdf_path):
     """Process a single PDF file and return transactions."""
-    # Extract year from filename
-    filename = os.path.basename(single_pdf_path)
-    statement_year = extract_year_from_filename(filename)
+    statement_year = extract_year_from_filename(single_pdf_path)
     
     doc = fitz.open(single_pdf_path)
     file_data = []
@@ -172,30 +149,15 @@ def process_pdf_with_ocr(single_pdf_path):
     
     doc.close()
     
-    # Add year to dates and format for CSV
+    # Format for CSV
     csv_data = []
     for row in file_data:
-        # Format date with year
-        date_str = row['Date']
-        if date_str and '/' in date_str:
-            try:
-                # Parse MM/DD format and add year
-                month, day = date_str.split('/')
-                dt = datetime(statement_year, int(month), int(day))
-                formatted_date = dt.strftime("%m/%d/%Y")
-            except:
-                formatted_date = date_str
-        else:
-            formatted_date = date_str
-        
-        # Categorize transaction
-        desc = row['Description']
-        category = categorize(desc)
+        formatted_date = format_date_with_year(row['Date'], statement_year)
         
         csv_data.append({
             'Date': formatted_date,
-            'Category': category,
-            'Description': desc,
+            'Category': categorize(row['Description']),
+            'Description': row['Description'],
             'Debit Amount': row['Debit'] if row['Debit'] else "",
             'Credit Amount': row['Credit'] if row['Credit'] else ""
         })
@@ -204,26 +166,16 @@ def process_pdf_with_ocr(single_pdf_path):
 
 def main():
     """Main processing function."""
-    pdf_path = config['paths']['pdf_path']
-    master_rows = []
+    config = get_config()
+    pdf_files = get_pdf_files(config['paths']['pdf_path'])
     
-    if os.path.isdir(pdf_path):
-        for name in sorted(os.listdir(pdf_path)):
-            if name.lower().endswith(".pdf"):
-                master_rows.extend(process_pdf_with_ocr(os.path.join(pdf_path, name)))
-    else:
-        master_rows.extend(process_pdf_with_ocr(pdf_path))
+    master_rows = []
+    for pdf_file in pdf_files:
+        master_rows.extend(process_pdf_with_ocr(pdf_file))
 
-    # Sort by date
     if master_rows:
         # Sort transactions by date
-        def parse_date_for_sorting(date_str):
-            try:
-                return datetime.strptime(date_str, "%m/%d/%Y")
-            except:
-                return datetime.min  # Put invalid dates at the beginning
-        
-        master_rows.sort(key=lambda x: parse_date_for_sorting(x['Date']))
+        master_rows = sort_transactions_by_date(master_rows)
         
         print("\n" + "="*60)
         print("--- COMBINED DATA FROM ALL FILES ---")
@@ -232,30 +184,20 @@ def main():
         print(combined_df)
         print(f"\nTotal transactions found: {len(combined_df)}")
         
-        # Save to CSV files
-        output_dir = "data/output"
+        # Save CSV files
         csv_headers = config['csv']['ocr_headers']
         write_individual = config['csv']['write_individual_files']
         
         # Save individual CSV if enabled
         if write_individual:
-            individual_csv_path = os.path.join(output_dir, f"output_page_ocr.csv")
-            with open(individual_csv_path, 'w', newline='', encoding='utf-8') as csvfile:
-                writer = csv.DictWriter(csvfile, fieldnames=csv_headers)
-                writer.writeheader()
-                writer.writerows(master_rows)
-            print(f"- Individual: {individual_csv_path}")
+            save_csv(master_rows, "output_page_ocr.csv", csv_headers)
         
         # Save master CSV
-        master_csv_path = os.path.join(output_dir, "output_master_ocr.csv")
-        with open(master_csv_path, 'w', newline='', encoding='utf-8') as csvfile:
-            writer = csv.DictWriter(csvfile, fieldnames=csv_headers)
-            writer.writeheader()
-            writer.writerows(master_rows)
+        master_csv_path = save_csv(master_rows, "output_master_ocr.csv", csv_headers)
         
         print(f"\nCSV files saved:")
         if write_individual:
-            print(f"- Individual: {individual_csv_path}")
+            print(f"- Individual: data/output/output_page_ocr.csv")
         print(f"- Master: {master_csv_path}")
     else:
         print("No data found across all files")

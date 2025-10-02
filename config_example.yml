@@ -1,5 +1,6 @@
 paths:
   pdf_path: "./data/statements/"
+  output_dir: "data/output"
 
 account:
   account_name: "Your Account Name"
@@ -9,6 +10,24 @@ csv:
   headers: ["Date", "Account", "Description", "Check #", "Category", "Credit", "Debit", "Account Name"]
   ocr_headers: ["Date", "Category", "Description", "Debit Amount", "Credit Amount"] # if different from the text headers
   write_individual_files: false
+
+ocr:
+  # Y-coordinate filtering (adjust for your bank's PDF layout)
+  page_1_y_start: 1955  # Start Y coordinate for page 1 transactions
+  page_1_y_end: 2500    # End Y coordinate for page 1 transactions
+  page_3_y_start: 640   # Start Y coordinate for page 3 transactions
+  page_3_y_end: 1050    # End Y coordinate for page 3 transactions
+  
+  # X-coordinate ranges for columns (adjust for your bank's PDF layout)
+  x_ranges:
+    Date: [135, 296]      # X range for date column
+    Description: [296, 1643]  # X range for description column
+    Credit: [1643, 2052]  # X range for credit/deposit column
+    Debit: [2052, 2470]   # X range for debit/withdrawal column
+  
+  # OCR settings
+  dpi: 300              # Image DPI for OCR processing
+  row_tolerance: 5      # Pixel tolerance for grouping words into rows
 
 categories:
   "YOUR KEYWORD": "Your Category"

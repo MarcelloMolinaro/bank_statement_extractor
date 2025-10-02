@@ -1,26 +1,11 @@
-import csv
-import yaml
-import os
 import re
 from datetime import datetime
 import pdfplumber
-import pandas as pd
-
-# Load configuration
-with open(os.path.join(os.path.dirname(__file__), '..', 'config.yml'), 'r') as f:
-    config = yaml.safe_load(f)
+from extract_utils import get_config, categorize, save_csv, sort_transactions_by_date, get_pdf_files, extract_year_from_filename
 
 # Transaction pattern
 PATTERN = re.compile(r"^([A-Za-z]{3}\s?\d{1,2})\s+(.+?)\s+(-?\$[\d,]+\.\d{2})(?:\s+\$[\d,]+\.\d{2})?$")
 MONTH_START = re.compile(r"\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s?\d{1,2}\b", re.IGNORECASE)
-
-def categorize(desc):
-    """Categorize transaction based on description."""
-    d = desc.upper()
-    for keyword in config['categories']:
-        if keyword in d:
-            return config['categories'][keyword]
-    return ""
 
 def extract_transactions_from_text(text, statement_year):
     """Extract transactions from text content."""
@@ -85,6 +70,7 @@ def extract_transactions_from_text(text, statement_year):
             if len(parts) > 1 and parts[1].isdigit():
                 check_no = parts[1]
         
+        config = get_config()
         transactions.append({
             "Date": date_fmt,
             "Account": config['account']['account_type'],
@@ -101,19 +87,8 @@ def extract_transactions_from_text(text, statement_year):
 
 def process_pdf(single_pdf_path: str) -> list:
     """Process a single PDF file and return transactions."""
-    output_dir = "data/output"
-    
-    fname = os.path.basename(single_pdf_path)
-    mdate = re.search(r"\b(\d{1,2})-(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)-(\d{4})\b", fname, re.IGNORECASE)
-    
-    if mdate:
-        _, mon_abbr, year_str = mdate.groups()
-        month_num = config['months'][mon_abbr.lower()]
-        output_csv = os.path.join(output_dir, f"output_{year_str}-{month_num}.csv")
-        statement_year = int(year_str)
-    else:
-        output_csv = os.path.join(output_dir, "output.csv")
-        statement_year = datetime.now().year
+    config = get_config()
+    statement_year = extract_year_from_filename(single_pdf_path)
 
     all_transactions = []
     with pdfplumber.open(single_pdf_path) as pdf:
@@ -123,38 +98,26 @@ def process_pdf(single_pdf_path: str) -> list:
 
     # Write individual CSV only if enabled in config
     if config['csv']['write_individual_files']:
-        headers = config['csv']['headers']
-        with open(output_csv, "w", newline="", encoding="utf-8") as f:
-            writer = csv.DictWriter(f, fieldnames=headers)
-            writer.writeheader()
-            for row in all_transactions:
-                writer.writerow({key: row.get(key, "") for key in headers})
+        fname = single_pdf_path.split('/')[-1].replace('.pdf', '')
+        save_csv(all_transactions, f"output_{fname}.csv", config['csv']['headers'])
 
     return all_transactions
 
 def main():
     """Main processing function."""
-    pdf_path = config['paths']['pdf_path']
-    master_rows = []
+    config = get_config()
+    pdf_files = get_pdf_files(config['paths']['pdf_path'])
     
-    if os.path.isdir(pdf_path):
-        for name in sorted(os.listdir(pdf_path)):
-            if name.lower().endswith(".pdf"):
-                master_rows.extend(process_pdf(os.path.join(pdf_path, name)))
-    else:
-        master_rows.extend(process_pdf(pdf_path))
+    master_rows = []
+    for pdf_file in pdf_files:
+        master_rows.extend(process_pdf(pdf_file))
 
-    # Write master CSV
     if master_rows:
-        output_dir = "data/output"
+        # Sort transactions by date
+        master_rows = sort_transactions_by_date(master_rows)
         
-        headers = config['csv']['headers']
-        master_csv_path = os.path.join(output_dir, "output_master_text.csv")
-        with open(master_csv_path, "w", newline="", encoding="utf-8") as f:
-            writer = csv.DictWriter(f, fieldnames=headers)
-            writer.writeheader()
-            for row in master_rows:
-                writer.writerow({key: row.get(key, "") for key in headers})
+        # Save master CSV
+        save_csv(master_rows, "output_master_text.csv", config['csv']['headers'])
 
 if __name__ == "__main__":
     main()

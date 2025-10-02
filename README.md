@@ -1,37 +1,31 @@
 # Bank Statement Extractor
 
-A Python tool that extracts transactions from PDF bank statements and exports them to CSV format. Supports both text-based and image-based PDFs with intelligent auto-detection, batch processing, and configurable output options.
+A Python tool that extracts transactions from PDF bank statements and exports them to CSV format. Automatically detects whether to use text extraction or OCR based on PDF content.
 
 ## Features
 
 - **🤖 Auto-Detection**: Automatically chooses between text extraction and OCR
-- **📄 Dual Processing**: Handles both text-based and scanned/image PDFs
-- **🔍 OCR Support**: Advanced optical character recognition for image-based statements
+- **📄 Dual Processing**: Handles both text-based and scanned PDFs
 - **📊 Batch Processing**: Process multiple PDF files in a directory
-- **🧠 Smart Parsing**: Handles QR code noise and multi-line transaction descriptions
-- **🏷️ Auto-categorization**: Categorizes transactions based on description keywords
-- **📁 Flexible Output**: Generate individual CSVs per statement or a master CSV
+- **🏷️ Auto-categorization**: Categorizes transactions based on keywords
 - **⚙️ Configurable**: YAML-based configuration for easy customization
-- **📅 Date Detection**: Automatically extracts statement year from filename
 - **📋 Date Sorting**: All transactions are sorted chronologically
 
-## Installation & Quick Start
+**Tested with:** Wintrust Bank (text extraction) and Amalgamated Bank (OCR extraction)
+
+## Quick Start
 
 ```bash
-# Clone or download the project
-cd bank_statement_extractor
-
-# Setup environment and install dependencies
+# 1. Setup (one time)
 ./scripts/build.sh
 
-# Place PDF files in the data/statements/ directory
-# (Optional) Configure settings in config.yml
+# 2. Add your PDFs to data/statements/
 
-# Run the extractor
+# 3. Run the extractor
 ./scripts/run.sh
 ```
 
-That's it! The script will automatically detect the best extraction method, process all PDFs in the `data/statements/` directory, and generate CSV files in the `data/output/` directory.
+That's it! The tool automatically detects the best extraction method and processes all PDFs.
 
 ## How It Works
 
@@ -47,9 +41,10 @@ No need to choose - it just works!
 Edit `config_example.yml` to customize behavior and rename to `config.yml`:
 
 ```yaml
-# PDF directory path
+# Directory paths
 paths:
   pdf_path: "./data/statements/"
+  output_dir: "data/output"
 
 # Account information
 account:
@@ -75,53 +70,26 @@ csv:
 
 ## Usage
 
-### Basic Usage
 ```bash
-# Auto-detect and process all PDFs
+# Normal usage
 ./scripts/run.sh
-```
 
-### Manual Setup (Alternative)
-```bash
-# If you prefer manual setup
+# Manual setup (if needed)
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 python src/auto_extract.py
 ```
 
-### Output Files
-- **`data/output/output_master_text.csv`**: Combined transactions from text-based PDFs
-- **`data/output/output_master_ocr.csv`**: Combined transactions from image-based PDFs
-- **`data/output/output_YYYY-MM.csv`**: Individual statement files (if enabled in config)
+### Output Files & Formats
+CSV files are saved to `data/output/` directory by default.
+CSV formats can be modified in the `config.yml`
 
-### CSV Format
-
-**Text Extraction Output:**
-| Date | Account | Description | Check # | Category | Credit | Debit | Account Name |
-|------|---------|-------------|---------|----------|--------|-------|--------------|
-| 12/25/2024 | Checking | PAYROLL DEPOSIT | | Income/Salary | 2500.00 | | YOUR_BANK |
-
-**OCR Extraction Output:**
-| Date | Category | Description | Debit Amount | Credit Amount |
-|------|----------|-------------|--------------|---------------|
-| 12/25/2024 | Income/Salary | PAYROLL DEPOSIT | | $2,500.00 |
 
 ## Supported PDF Formats
 
-### Text-Based PDFs (Fast Processing)
-- **Digital bank statements** with selectable text
-- **Wintrust Bank statements** (tested)
-- **Transaction Detail sections** with date/description/amount format
-- **Multi-page statements** with continuation handling
-- **QR code noise filtering** for clean extraction
-
-### Image-Based PDFs (OCR Processing)
-- **Scanned bank statements**
-- **Image-based PDFs** without selectable text
-- **Amalgamated Bank statements** (tested)
-- **Multi-page OCR** with cross-page continuation handling
-- **Smart page detection** (skips pages without transaction data)
+- **Text-based PDFs** (fast): Digital statements with selectable text - *Tested: Wintrust Bank*
+- **Image-based PDFs** (slower): Scanned statements requiring OCR - *Tested: Amalgamated Bank*
 
 ## File Structure
 
@@ -145,7 +113,7 @@ bank_statement_extractor/
 └── README.md                    # This file
 ```
 
-## Advanced Usage
+## Advanced Usage & Configuration
 
 ### Custom Categories
 Add new categorization rules in `config.yml`:
@@ -161,59 +129,57 @@ categories:
 - **Master only** (default): `write_individual_files: false`
 - **Both**: `write_individual_files: true`
 
+### OCR Coordinate Configuration
+For different bank layouts, adjust OCR coordinates in `config.yml`:
+```yaml
+ocr:
+  x_ranges:
+    Date: [135, 296]      # X pixels for date column
+    Description: [296, 1643]  # X pixels for description column
+    Credit: [1643, 2052]  # X pixels for credit column
+    Debit: [2052, 2470]   # X pixels for debit column
+```
+
 ### PDF Filename Formats
 The tool supports various filename formats and automatically extracts years:
 
 **Text Extraction:**
-- Format: `*-DD-Mon-YYYY.pdf`
-- Example: `002-0000002300040174-15-Dec-2022.pdf`
+- Default Format: `*-DD-Mon-YYYY.pdf`
+- Example: `001-0000005500070237-15-Dec-2022.pdf`
 
 **OCR Extraction:**
-- Format: `*_MM_DD_YYYY_*.pdf`
-- Example: `3_29_2024_amalgamated.pdf`
+- Default Format: `*_MM_DD_YYYY_*.pdf`
+- Example: `1_26_1986_monsters_midway.pdf`
 
 ## Troubleshooting
 
 ### No transactions extracted
-- Run `./scripts/run.sh` - the tool automatically detects the best extraction method
-- Check if PDF contains "Transaction Detail" or "Activity Description" sections
+- Check if PDF contains "Transaction Detail" (for Text based) or "Activity Description" (for OCR) sections
 - Verify PDF files are in the `data/statements/` directory
 - For debugging, you can run the specific extraction methods manually:
   - `python src/extract_pdf_text.py` (for text-based PDFs)
   - `python src/extract_pdf_ocr.py` (for image-based PDFs)
 
 ### Missing transaction descriptions
-- The parser handles multi-line descriptions automatically
-- QR code noise is filtered out
-- OCR handles cross-page continuations
 - Check if continuation lines are being captured
+- OCR currently skips page 2 (no data found there)
+- OCR Coordinate configs might need adjustment
 
 ### OCR-specific issues
 - **Slow processing**: OCR is inherently slower than text extraction
 - **Missing data**: Check Y-coordinate filtering in the OCR script
 - **Garbled text**: Try adjusting OCR DPI settings (currently 300)
+- **Incorrect data**: See OCR Coordinate Configuration above
 
 ### Configuration issues
-- Ensure `config.yml` is valid YAML
-- Check file paths are correct
-- Verify all required sections are present
-
-## Dependencies
-
-### Core Dependencies
-- `pdfplumber`: PDF text extraction
-- `pandas`: Data manipulation and CSV output
-- `PyYAML`: Configuration file parsing
-
-### OCR Dependencies (auto-installed)
-- `pytesseract`: Python wrapper for Tesseract OCR
-- `opencv-python`: Image processing for OCR
-- `PyMuPDF` (fitz): PDF rendering to images
-- `Pillow`: Image manipulation
-- `numpy`: Numerical operations
+- If you changed the csv_headers at all, you might need to re-map any new fields in the .py files
 
 ### System Dependencies
-- `tesseract`: OCR engine (installed via conda during setup)
+- `tesseract`: OCR engine (must be installed via conda during setup)
+- ... this worked... but Brew should work as well
+```bash
+conda install -c conda-forge tesseract-data-eng
+```
 
 ## Privacy & Security
 
