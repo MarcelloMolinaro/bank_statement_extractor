@@ -75,7 +75,7 @@ def extract_transactions_from_text(text, statement_year):
             "Date": date_fmt,
             "Account": config['account']['account_type'],
             "Description": full_desc,
-            "Check #": check_no,
+            "Check Number": check_no,
             "Category": categorize(full_desc),
             "Credit": credit,
             "Debit": debit,

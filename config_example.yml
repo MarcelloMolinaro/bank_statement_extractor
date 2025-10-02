@@ -7,7 +7,7 @@ account:
   account_type: "Salty Seniors Checking"
 
 csv:
-  headers: ["Date", "Account", "Description", "Check #", "Category", "Credit", "Debit", "Account Name"]
+  headers: ["Date", "Account", "Description", "Check Number", "Category", "Credit", "Debit", "Account Name"]
   ocr_headers: ["Date", "Category", "Description", "Debit Amount", "Credit Amount"] # if different from the text headers
   write_individual_files: false
 
