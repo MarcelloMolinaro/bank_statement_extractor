@@ -10,6 +10,7 @@ A Python tool that extracts transactions from PDF bank statements and exports th
 - **⚙️ Configurable**: YAML-based configuration for easy customization
 
 **Text-based PDFs** (fast): Digital statements with selectable text
+
 **Image-based PDFs** (slower): Scanned statements requiring OCR
 
 
