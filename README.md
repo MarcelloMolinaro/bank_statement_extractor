@@ -9,13 +9,15 @@ A Python tool that extracts transactions from PDF bank statements and exports th
 - **🏷️ Categorization**: Categorizes transactions based on user-specified keywords
 - **⚙️ Configurable**: YAML-based configuration for easy customization
 
-**Tested with:** Wintrust Bank (TEXT extraction) and Amalgamated Bank (OCR extraction)
+- **Text-based PDFs** (fast): Digital statements with selectable text - *Tested: Wintrust Bank*
+- **Image-based PDFs** (slower): Scanned statements requiring OCR - *Tested: Amalgamated Bank*
+
 
 ## Quick Start
 
 ```bash
 # 1. Clone the repository
-git clone <repository-url>
+git clone https://github.com/MarcelloMolinaro/bank_statement_extractor.git
 cd bank_statement_extractor
 
 # 2. Setup (one time)
@@ -29,16 +31,7 @@ cd bank_statement_extractor
 
 That's it!
 
-## How It Works
-
-The tool automatically analyzes your PDFs and chooses the best extraction method:
-
-1. **Text Extraction** (Fast): For digital PDFs with selectable text
-2. **OCR Extraction** (Slower): For scanned or image-based PDFs
-
-No need to choose - it just works!
-
-## Configuration
+## ⚙️ Configuration
 
 Edit `config_example.yml` to customize behavior and rename to `config.yml`:
 
@@ -70,29 +63,6 @@ csv:
   write_individual_files: false  # Set to true for per-statement CSVs
 ```
 
-## Usage
-
-```bash
-# Normal usage
-./scripts/run.sh
-
-# Manual setup (if needed)
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-python src/auto_extract.py
-```
-
-### Output Files & Formats
-CSV files are saved to `data/output/` directory by default.
-CSV formats can be modified in the `config.yml`
-
-
-## Supported PDF Formats
-
-- **Text-based PDFs** (fast): Digital statements with selectable text - *Tested: Wintrust Bank*
-- **Image-based PDFs** (slower): Scanned statements requiring OCR - *Tested: Amalgamated Bank*
-
 ## File Structure
 
 ```
@@ -109,8 +79,7 @@ bank_statement_extractor/
 │   └── output/                   # Generated CSV files
 │       ├── output_master_text.csv
 │       └── output_master_ocr.csv
-├── config.yml                   # Configuration file
-├── config_example.yml           # Example configuration
+├── config_example.yml           # Example configuration, rename to config.yml
 ├── requirements.txt             # Python dependencies
 └── README.md                    # This file
 ```
@@ -127,12 +96,8 @@ categories:
   "UBER": "Transportation"
 ```
 
-### Individual vs Master CSV
-- **Master only** (default): `write_individual_files: false`
-- **Both**: `write_individual_files: true`
-
 ### OCR Coordinate Configuration
-For different bank layouts, adjust OCR coordinates in `config.yml`:
+For different bank layouts, adjust OCR X-coordinates in `config.yml`:
 ```yaml
 ocr:
   x_ranges:
@@ -142,16 +107,11 @@ ocr:
     Debit: [2052, 2470]   # X pixels for debit column
 ```
 
-### PDF Filename Formats
-The tool supports various filename formats and automatically extracts years:
-
-**Text Extraction:**
-- Default Format: `*-DD-Mon-YYYY.pdf`
-- Example: `001-0000005500070237-15-Dec-2022.pdf`
-
-**OCR Extraction:**
-- Default Format: `*_MM_DD_YYYY_*.pdf`
-- Example: `1_26_1986_monsters_midway.pdf`
+### PDF Date Formats
+- The tool extracts the year from the filename, defaulting to current year when no
+4 digit year is  found.
+- The date formatting for dates within statements liekly doesn't capture all date formats
+- Room for improvement here!
 
 ## Troubleshooting
 
@@ -171,7 +131,7 @@ The tool supports various filename formats and automatically extracts years:
 - **Slow processing**: OCR is inherently slower than text extraction
 - **Missing data**: Check Y-coordinate filtering in the OCR script
 - **Garbled text**: Try adjusting OCR DPI settings (currently 300)
-- **Incorrect data**: See OCR Coordinate Configuration above
+- **Incorrect data**: See OCR  X-Coordinate Configuration above
 
 ### Configuration issues
 - If you changed the csv_headers at all, you might need to re-map any new fields in the .py files
@@ -183,6 +143,12 @@ The tool supports various filename formats and automatically extracts years:
 conda install -c conda-forge tesseract-data-eng
 ```
 
+## Future updates
+- Dynamic OCR coordinate recognition (X and Y)
+- Dynamic CSV Header generation based on transaction content
+- Dynamic page skipping when transaction data is not present
+- Better date parsing
+
 ## Privacy & Security
 
 - **PDF files are ignored by git**: Your bank statements stay private
@@ -192,3 +158,4 @@ conda install -c conda-forge tesseract-data-eng
 ## License
 
 This project is for personal use. Modify and distribute as needed.
+Please comment if it was helupful to you and open an issue or PR if you want any changes or additions!
