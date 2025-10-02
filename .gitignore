@@ -19,17 +19,16 @@ __pycache__/
 Thumbs.db
 
 # Project specific
-# Ignore PDF files but keep directory structure
-statements/*.pdf
-statements/**/*.pdf
+# Ignore PDF files and generated CSV files but keep directory structure
+data/statements/*.pdf
+data/statements/**/*.pdf
+data/output/*.csv
+data/output/**/*.csv
 
-# Keep the statements directory and .gitkeep file
-!statements/
-!statements/.gitkeep
+# Keep the data directories
+!data/statements/
+!data/output/
 
-# Ignore generated CSV files but keep output directory structure
-output/*.csv
-output/**/*.csv
+# Don't commit my personal config file
+config.yml
 
-# Keep the output directory
-!output/

@@ -1,0 +1,31 @@
+paths:
+  pdf_path: "./data/statements/"
+
+account:
+  account_name: "Your Account Name"
+  account_type: "Salty Seniors Checking"
+
+csv:
+  headers: ["Date", "Account", "Description", "Check #", "Category", "Credit", "Debit", "Account Name"]
+  ocr_headers: ["Date", "Category", "Description", "Debit Amount", "Credit Amount"] # if different from the text headers
+  write_individual_files: false
+
+categories:
+  "YOUR KEYWORD": "Your Category"
+  "VENMO": "Transfer"
+  "ROBINHOOD": "Investments"
+  "PAYROLL": "Income/Salary"
+  
+months:
+  jan: "01"
+  feb: "02"
+  mar: "03"
+  apr: "04"
+  may: "05"
+  jun: "06"
+  jul: "07"
+  aug: "08"
+  sep: "09"
+  oct: "10"
+  nov: "11"
+  dec: "12"

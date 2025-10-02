@@ -101,9 +101,7 @@ def extract_transactions_from_text(text, statement_year):
 
 def process_pdf(single_pdf_path: str) -> list:
     """Process a single PDF file and return transactions."""
-    # Ensure output directory exists
-    output_dir = "output"
-    os.makedirs(output_dir, exist_ok=True)
+    output_dir = "data/output"
     
     fname = os.path.basename(single_pdf_path)
     mdate = re.search(r"\b(\d{1,2})-(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)-(\d{4})\b", fname, re.IGNORECASE)
@@ -148,12 +146,10 @@ def main():
 
     # Write master CSV
     if master_rows:
-        # Ensure output directory exists
-        output_dir = "output"
-        os.makedirs(output_dir, exist_ok=True)
+        output_dir = "data/output"
         
         headers = config['csv']['headers']
-        master_csv_path = os.path.join(output_dir, "output_master.csv")
+        master_csv_path = os.path.join(output_dir, "output_master_text.csv")
         with open(master_csv_path, "w", newline="", encoding="utf-8") as f:
             writer = csv.DictWriter(f, fieldnames=headers)
             writer.writeheader()
