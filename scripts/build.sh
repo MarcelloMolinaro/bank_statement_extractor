@@ -3,7 +3,7 @@ set -euo pipefail
 
 # Create and activate a Python virtual environment, then install dependencies.
 
-PROJECT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$PROJECT_DIR"
 
 if ! command -v python3 >/dev/null 2>&1; then
