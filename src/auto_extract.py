@@ -1,12 +1,10 @@
 #!/usr/bin/env python3
 """
 Smart PDF processor that automatically chooses between text extraction and OCR.
-Tries text extraction first, falls back to OCR if needed.
 """
 
-import os
-import sys
 import pdfplumber
+from extract_utils import get_config, get_pdf_files
 from extract_pdf_text import main as text_extract_main
 from extract_pdf_ocr import main as ocr_extract_main
 
@@ -42,46 +40,31 @@ def detect_pdf_type(pdf_path):
 
 def main():
     """Main entry point that auto-detects and processes PDFs."""
-    print("🔍 Bank Statement Extractor")
+    print("Running Bank Statement Extractor...")
     print("=" * 50)
     
-    # Get PDF path from config or command line
-    import yaml
-    with open(os.path.join(os.path.dirname(__file__), '..', 'config.yml'), 'r') as f:
-        config = yaml.safe_load(f)
+    config = get_config()
+    pdf_files = get_pdf_files(config['paths']['pdf_path'])
     
-    pdf_path = config['paths']['pdf_path']
+    if not pdf_files:
+        print("❌ No PDF files found")
+        return
     
-    if os.path.isdir(pdf_path):
-        # Process directory - analyze first PDF to determine method
-        pdf_files = [f for f in os.listdir(pdf_path) if f.lower().endswith('.pdf')]
-        if not pdf_files:
-            print("❌ No PDF files found in directory")
-            return
-            
-        # Test first PDF to determine extraction method
-        first_pdf = os.path.join(pdf_path, sorted(pdf_files)[0])
-        detection_result = detect_pdf_type(first_pdf)
-        
-        print(f"📄 Analyzing: {os.path.basename(first_pdf)}")
-        print(f"🔧 Detection result: {detection_result.upper()}")
-        
-    else:
-        # Single file
-        detection_result = detect_pdf_type(pdf_path)
-        print(f"📄 Analyzing: {os.path.basename(pdf_path)}")
-        print(f"🔧 Detection result: {detection_result.upper()}")
+    # Test first PDF to determine extraction method
+    detection_result = detect_pdf_type(pdf_files[0])
     
+    print(f"📄 Analyzing: {pdf_files[0].split('/')[-1]}")
+    print(f"🔧 Detection result: {detection_result.upper()}")
     print("-" * 50)
     
     if detection_result == 'text':
-        print("✅ Using TEXT EXTRACTION method...")
+        print("Using TEXT EXTRACTION method...")
         text_extract_main()
     else:
-        print("✅ Using OCR method...")
+        print("Using OCR method...")
         ocr_extract_main()
     
-    print("\n🎉 Processing complete!")
+    print("\n✅  Processing complete!")
 
 if __name__ == "__main__":
     main()

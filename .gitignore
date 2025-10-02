@@ -32,3 +32,6 @@ data/output/**/*.csv
 # Don't commit my personal config file
 config.yml
 
+# unfinished script to help with OCR coordinate configuration
+get_coords.py
+
