@@ -9,8 +9,8 @@ A Python tool that extracts transactions from PDF bank statements and exports th
 - **🏷️ Categorization**: Categorizes transactions based on user-specified keywords
 - **⚙️ Configurable**: YAML-based configuration for easy customization
 
-- **Text-based PDFs** (fast): Digital statements with selectable text - *Tested: Wintrust Bank*
-- **Image-based PDFs** (slower): Scanned statements requiring OCR - *Tested: Amalgamated Bank*
+**Text-based PDFs** (fast): Digital statements with selectable text
+**Image-based PDFs** (slower): Scanned statements requiring OCR
 
 
 ## Quick Start
