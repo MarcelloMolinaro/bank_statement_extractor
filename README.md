@@ -1,31 +1,33 @@
 # Bank Statement Extractor
 
-A Python tool that extracts transactions from PDF bank statements and exports them to CSV format. Automatically detects whether to use text extraction or OCR based on PDF content.
+A Python tool that extracts transactions from PDF bank statements and exports them to CSV format.
 
-## Features
+## Key Features
 
-- **🤖 Auto-Detection**: Automatically chooses between text extraction and OCR
-- **📄 Dual Processing**: Handles both text-based and scanned PDFs
-- **📊 Batch Processing**: Process multiple PDF files in a directory
-- **🏷️ Auto-categorization**: Categorizes transactions based on keywords
+- **Auto-Detection**: Automatically chooses between text extraction and OCR
+- **Batch Processing**: Process multiple PDF files in a directory
+- **🏷️ Categorization**: Categorizes transactions based on user-specified keywords
 - **⚙️ Configurable**: YAML-based configuration for easy customization
-- **📋 Date Sorting**: All transactions are sorted chronologically
 
-**Tested with:** Wintrust Bank (text extraction) and Amalgamated Bank (OCR extraction)
+**Tested with:** Wintrust Bank (TEXT extraction) and Amalgamated Bank (OCR extraction)
 
 ## Quick Start
 
 ```bash
-# 1. Setup (one time)
+# 1. Clone the repository
+git clone <repository-url>
+cd bank_statement_extractor
+
+# 2. Setup (one time)
 ./scripts/build.sh
 
-# 2. Add your PDFs to data/statements/
+# 3. Add your PDFs to data/statements/
 
-# 3. Run the extractor
+# 4. Run the extractor
 ./scripts/run.sh
 ```
 
-That's it! The tool automatically detects the best extraction method and processes all PDFs.
+That's it!
 
 ## How It Works
 
